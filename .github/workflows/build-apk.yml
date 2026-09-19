@@ -1,13 +1,9 @@
 name: Build worker APK
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -18,74 +14,40 @@ jobs:
     name: Build Android APK
     runs-on: ubuntu-latest
     steps:
-      # ============================================================
-      # 1. Tải mã nguồn từ GitHub Repository về máy ảo
-      # ============================================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ============================================================
-      # 2. Cấu hình môi trường Java phục vụ dự án Java thuần
-      # ============================================================
+      # Chỉ cần Java 17, hệ điều hành ubuntu-latest đã tích hợp sẵn đầy đủ Android SDK mặc định
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # ============================================================
-      # 3. Tự động định vị Root Project và Build APK bằng Gradle phù hợp
-      # ============================================================
-      - name: Fix Path and Build Android App
-        id: build_step
+      - name: Build Android App
         shell: bash
         run: |
-          echo "=====[ 1. TỰ ĐỘNG DÒ TÌM THƯ MỤC GỐC DỰ ÁN ]====="
+          # 1. Tìm thư mục chứa file cấu hình dự án
           SETTINGS_FILE=$(find . -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1)
-          if [ -z "$SETTINGS_FILE" ]; then
-            echo "⚠️ Không thấy settings.gradle, thử tìm build.gradle ở tầng cao nhất..."
-            SETTINGS_FILE=$(find . -name "build.gradle" | sort | head -n 1)
-          fi
-          
-          if [ -z "$SETTINGS_FILE" ]; then
-            echo "❌ LỖI: Không định vị được cấu trúc dự án Android!"
-            exit 1
-          fi
-          
-          TARGET_DIR=$(dirname "$SETTINGS_FILE" | sed 's|^\./||; s|^\.||')
-          echo "➡️ Thư mục gốc dự án được xác định tại: $TARGET_DIR"
-          echo "target_dir=$TARGET_DIR" >> $GITHUB_OUTPUT
-          
-          cd "$TARGET_DIR" || exit 1
-          
-          # Tự động map ANDROID_HOME được cài sẵn trên môi trường ubuntu-latest của GitHub
-          if [ -n "$ANDROID_HOME" ]; then
-            echo "sdk.dir=$ANDROID_HOME" | sed 's/\\/\\\\/g' > local.properties
-            echo "➡️ Đã ghi local.properties với ANDROID_HOME=$ANDROID_HOME"
-          fi
-          
-          echo "=====[ 2. KHỞI TẠO HOẶC CẤP QUYỀN GRADLE WRAPPER V8.4 ]====="
+          TARGET_DIR=$(dirname "$SETTINGS_FILE")
+          cd "$TARGET_DIR"
+
+          # 2. Cấp quyền chạy cho Gradle
           if [ -f "./gradlew" ]; then
-            echo "-> Tìm thấy gradlew có sẵn, tiến hành cấp quyền thực thi..."
             chmod +x ./gradlew
           else
-            echo "-> Tự động tạo cấu hình Gradle Wrapper bản ổn định 8.4..."
-            # Cài đặt gradle tạm thời để sinh cấu trúc wrapper wrapper nếu thiếu
-            sudo apt-get update && sudo apt-get install -y gradle
+            echo "sdk.dir=$ANDROID_HOME" > local.properties
             gradle wrapper --gradle-version 8.4
             chmod +x ./gradlew
           fi
-          
-          echo "=====[ 3. TIẾN HÀNH BIÊN DỊCH FILE APK ]====="
-          ./gradlew assembleDebug --stacktrace
 
-      # ============================================================
-      # 4. Đóng gói và xuất file APK ra ngoài tab Actions
-      # ============================================================
+          # 3. Biên dịch ứng dụng
+          ./gradlew assembleDebug --no-daemon
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: jobfinder-debug-apk
-          path: ${{ github.workspace }}/**/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/debug/*.apk"
           retention-days: 7
           if-no-files-found: error
