@@ -1,4 +1,4 @@
-name: Build JobFinder APK
+name: Build worker APK
 on:
   push:
     branches:
@@ -34,10 +34,10 @@ jobs:
           java-version: '17'
 
       # ============================================================
-      # 2b. Cài Android SDK (bắt buộc để assembleDebug chạy được)
+      # 2b. Cài Android SDK (Đã nâng cấp lên v4 để SỬA HOÀN TOÀN lỗi 'tools')
       # ============================================================
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       # ============================================================
       # 3. Tự động định vị Root Project và Build APK bằng Gradle phù hợp
@@ -61,7 +61,7 @@ jobs:
           TARGET_DIR=$(dirname "$SETTINGS_FILE")
           echo "➡️ Thư mục gốc dự án được xác định tại: $TARGET_DIR"
           
-          # LƯU ĐƯỜNG DẪN NÀY LẠI ĐỂ SỬ DỤNG CHO STEP SAU
+          # Lưu đường dẫn tương đối để truyền sang bước upload artifact
           echo "target_dir=$TARGET_DIR" >> $GITHUB_OUTPUT
           
           cd "$TARGET_DIR"
@@ -94,7 +94,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jobfinder-debug-apk
-          # Sử dụng đường dẫn chính xác tuyệt đối trỏ thẳng vào thư mục dự án
-          path: '${{ steps.build_step.outputs.target_dir }}/**/build/outputs/apk/debug/*.apk'
+          # Trỏ đường dẫn chính xác tuyệt đối vào cấu trúc thư mục được lưu ở step build_step
+          path: '${{ github.workspace }}/${{ steps.build_step.outputs.target_dir }}/**/build/outputs/apk/debug/*.apk'
           retention-days: 7
           if-no-files-found: error
