@@ -1,4 +1,4 @@
-name: Build Worker APK
+name: Build JobFinder APK
 on:
   push:
     branches:
@@ -70,13 +70,17 @@ jobs:
           fi
           
           echo "=====[ 2. NÂNG CẤP VÀ ĐỒNG BỘ GRADLE WRAPPER V8.4 ]====="
-          # Ép hệ thống dùng Gradle 8.4 tương thích 100% với JDK 17, tránh lỗi xung đột phiên bản
-          gradle wrapper --gradle-version 8.4 --distribution-type bin
+          # Sử dụng cú pháp tương thích với cả Gradle 9.x để ép hệ thống hạ cấp về bản ổn định 8.4
+          if [ -f "./gradlew" ]; then
+            ./gradlew :wrapper --gradle-version=8.4 --distribution-type=bin
+          else
+            gradle :wrapper --gradle-version=8.4 --distribution-type=bin
+          fi
           chmod +x ./gradlew
           
           echo "=====[ 3. TIẾN HÀNH BIÊN DỊCH FILE APK ]====="
-          # Chạy build kèm cờ --no-daemon để tối ưu RAM cho máy ảo GitHub Actions
-          ./gradlew assembleDebug --stacktrace --no-daemon
+          # Thực hiện build sạch và bỏ qua cảnh báo không nghiêm trọng
+          ./gradlew clean assembleDebug --stacktrace --no-daemon
 
       # ============================================================
       # 4. Đóng gói và xuất file APK ra ngoài tab Actions
