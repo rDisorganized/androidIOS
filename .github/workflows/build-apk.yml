@@ -9,8 +9,10 @@ on:
       - main
       - master
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
   build:
     name: Build Android APK
@@ -41,26 +43,29 @@ jobs:
       # 3. Tự động định vị Root Project và Build APK bằng Gradle phù hợp
       # ============================================================
       - name: Fix Path and Build Android App
+        id: build_step
         shell: bash
         run: |
           echo "=====[ 1. TỰ ĐỘNG DÒ TÌM THƯ MỤC GỐC DỰ ÁN ]====="
-          # Tìm file settings.gradle để xác định chính xác thư mục gốc (Root) của dự án Android
           SETTINGS_FILE=$(find . -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1)
-
           if [ -z "$SETTINGS_FILE" ]; then
             echo "⚠️ Không thấy settings.gradle, thử tìm build.gradle ở tầng cao nhất..."
             SETTINGS_FILE=$(find . -name "build.gradle" | sort | head -n 1)
           fi
-
+          
           if [ -z "$SETTINGS_FILE" ]; then
             echo "❌ LỖI: Không định vị được cấu trúc dự án Android!"
             exit 1
           fi
-
+          
           TARGET_DIR=$(dirname "$SETTINGS_FILE")
           echo "➡️ Thư mục gốc dự án được xác định tại: $TARGET_DIR"
+          
+          # LƯU ĐƯỜNG DẪN NÀY LẠI ĐỂ SỬ DỤNG CHO STEP SAU
+          echo "target_dir=$TARGET_DIR" >> $GITHUB_OUTPUT
+          
           cd "$TARGET_DIR"
-
+          
           if [ -n "$ANDROID_HOME" ]; then
             echo "sdk.dir=$ANDROID_HOME" | sed 's/\\/\\\\/g' > local.properties
             echo "➡️ Đã ghi local.properties với ANDROID_HOME=$ANDROID_HOME"
@@ -68,9 +73,8 @@ jobs:
             echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
             echo "➡️ Đã ghi local.properties với ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
           fi
-
+          
           echo "=====[ 2. KHỞI TẠO HOẶC CẤP QUYỀN GRADLE WRAPPER V8.4 ]====="
-          # Ép hệ thống sử dụng phiên bản cố định Gradle 8.4 nhằm tránh lỗi xung đột trên GitHub
           if [ -f "./gradlew" ]; then
             echo "-> Tìm thấy gradlew có sẵn, tiến hành cấp quyền thực thi..."
             chmod +x ./gradlew
@@ -79,9 +83,8 @@ jobs:
             gradle wrapper --gradle-version 8.4
             chmod +x ./gradlew
           fi
-
+          
           echo "=====[ 3. TIẾN HÀNH BIÊN DỊCH FILE APK ]====="
-          # Chạy lệnh biên dịch kèm hiển thị chi tiết stacktrace nếu phát sinh lỗi nguồn
           ./gradlew assembleDebug --stacktrace
 
       # ============================================================
@@ -91,6 +94,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jobfinder-debug-apk
-          path: '**/build/outputs/apk/debug/*.apk'
+          # Sử dụng đường dẫn chính xác tuyệt đối trỏ thẳng vào thư mục dự án
+          path: '${{ steps.build_step.outputs.target_dir }}/**/build/outputs/apk/debug/*.apk'
           retention-days: 7
           if-no-files-found: error
