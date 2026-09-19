@@ -13,14 +13,23 @@ Dữ liệu lưu trên Firebase Realtime Database theo từng tài khoản.
 
 ## Mở project trên Android Studio
 1. Giải nén file zip
-2. Mở Android Studio → **Open** → chọn thư mục `WorkerWorkload`
-3. Đợi Gradle Sync
-4. Nếu chưa có `gradlew`, Android Studio sẽ tự tạo Gradle Wrapper
+2. Android Studio → **Open** → chọn thư mục `WorkerWorkload` (thư mục có `settings.gradle`)
+3. Đợi Gradle Sync (Gradle **8.4**, AGP **8.3.2**, JDK **17**)
+4. Run app
 
-## Cấu hình Firebase (bắt buộc để chạy thật)
-1. Vào [Firebase Console](https://console.firebase.google.com/) → project **project-doidoi**
-2. **Authentication** → Sign-in method → bật **Email/Password**
-3. **Realtime Database** → Rules, dán:
+## Build APK trên GitHub (khuyến nghị)
+Đẩy **nội dung thư mục `WorkerWorkload`** lên repo (file `settings.gradle` phải nằm ở root repo, hoặc trong 1 thư mục con — workflow sẽ tự dò).
+
+Workflow: `.github/workflows/build-apk.yml`
+
+- Nhánh: `main` / `master` (push, pull request) hoặc chạy tay **workflow_dispatch**
+- Lệnh: `./gradlew assembleDebug`
+- Tải APK tại tab **Actions** → artifact `jobfinder-debug-apk`
+
+## Cấu hình Firebase
+1. Firebase Console → project **project-doidoi**
+2. Authentication → Sign-in method → bật **Email/Password**
+3. Realtime Database → Rules (file `database.rules.json`):
 
 ```json
 {
@@ -35,17 +44,15 @@ Dữ liệu lưu trên Firebase Realtime Database theo từng tài khoản.
 }
 ```
 
-4. Thêm ứng dụng **Android** với package: `com.example.workerworkload`
-5. Tải `google-services.json` mới và **thay** file `app/google-services.json`
+4. Thêm app Android, package: `com.example.workerworkload`
+5. Thay `app/google-services.json` bằng file tải từ Console
 
-> File `google-services.json` trong zip dùng cấu hình hiện có (project `project-doidoi`). Nên đăng ký app Android trong Console để tránh lỗi App ID.
-
-## Build APK trên GitHub
-1. Tạo repo GitHub, đẩy toàn bộ source
-2. Vào **Actions** → workflow **Build APK**
-3. Tải artifact `app-release`
-
-Hoặc trên máy: Android Studio → **Build → Build Bundle(s) / APK(s) → Build APK(s)**
-
-## Package
-`com.example.workerworkload`
+## Stack build
+| Thành phần | Phiên bản |
+|---|---|
+| JDK | 17 |
+| Gradle | 8.4 |
+| Android Gradle Plugin | 8.3.2 |
+| compileSdk / targetSdk | 34 |
+| minSdk | 24 |
+| Package | `com.example.workerworkload` |
