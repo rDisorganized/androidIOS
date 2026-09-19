@@ -8,7 +8,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:849773176716:web:b61e7fe2c36ca012d058a9",
+        "mobilesdk_app_id": "1:849773176716:android:b61e7fe2c36ca012d058a9",
         "android_client_info": {
           "package_name": "com.example.workerworkload"
         }

@@ -6,25 +6,51 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
-public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.ViewHolder> {
+public class WorkAdapter extends ListAdapter<WorkItem, WorkAdapter.ViewHolder> {
 
     public interface OnItemLongClickListener {
         void onLongClick(WorkItem item);
     }
 
-    private final List<WorkItem> list;
+    private static final SimpleDateFormat DATE_FORMAT =
+            new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+
+    private static final DiffUtil.ItemCallback<WorkItem> DIFF =
+            new DiffUtil.ItemCallback<WorkItem>() {
+                @Override
+                public boolean areItemsTheSame(@NonNull WorkItem a, @NonNull WorkItem b) {
+                    if (a.id == null || b.id == null) {
+                        return false;
+                    }
+                    return a.id.equals(b.id);
+                }
+
+                @Override
+                public boolean areContentsTheSame(@NonNull WorkItem a, @NonNull WorkItem b) {
+                    return a.sameContent(b);
+                }
+            };
+
     private final OnItemLongClickListener longClickListener;
 
-    public WorkAdapter(List<WorkItem> list, OnItemLongClickListener longClickListener) {
-        this.list = list;
+    public WorkAdapter(OnItemLongClickListener longClickListener) {
+        super(DIFF);
         this.longClickListener = longClickListener;
+        setHasStableIds(true);
+    }
+
+    @Override
+    public long getItemId(int position) {
+        String id = getItem(position).id;
+        return id == null ? RecyclerView.NO_ID : id.hashCode();
     }
 
     @NonNull
@@ -37,18 +63,19 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        WorkItem item = list.get(position);
-        holder.tvWorker.setText(item.workerName);
-        holder.tvWorkType.setText(item.workType);
+        WorkItem item = getItem(position);
+        holder.tvWorker.setText(safe(item.workerName));
+        holder.tvWorkType.setText(safe(item.workType));
         holder.tvDetail.setText(String.format(Locale.getDefault(),
                 "Khối lượng: %.2f %s  |  Thời gian: %.1f giờ",
-                item.quantity, item.unit, item.hours));
+                item.quantity, safe(item.unit), item.hours));
         holder.tvProductivity.setText(String.format(Locale.getDefault(),
-                "Năng suất: %.2f %s/giờ", item.productivity, item.unit));
-
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-        holder.tvDate.setText(sdf.format(new Date(item.timestamp)));
-
+                "Năng suất: %.2f %s/giờ", item.productivity, safe(item.unit)));
+        if (item.timestamp > 0) {
+            holder.tvDate.setText(DATE_FORMAT.format(new Date(item.timestamp)));
+        } else {
+            holder.tvDate.setText("");
+        }
         holder.itemView.setOnLongClickListener(v -> {
             if (longClickListener != null) {
                 longClickListener.onLongClick(item);
@@ -57,13 +84,12 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.ViewHolder> {
         });
     }
 
-    @Override
-    public int getItemCount() {
-        return list.size();
+    private static String safe(String value) {
+        return value == null ? "" : value;
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvWorker, tvWorkType, tvDetail, tvProductivity, tvDate;
+        final TextView tvWorker, tvWorkType, tvDetail, tvProductivity, tvDate;
 
         ViewHolder(View itemView) {
             super(itemView);

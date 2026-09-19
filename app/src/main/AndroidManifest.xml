@@ -2,8 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
+        android:name=".WorkloadApp"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
@@ -24,10 +26,12 @@
 
         <activity
             android:name=".RegisterActivity"
+            android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".MainActivity"
+            android:exported="false"
             android:windowSoftInputMode="adjustResize" />
     </application>
 </manifest>
