@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "849773176716",
+    "firebase_url": "https://project-doidoi-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "project-doidoi",
+    "storage_bucket": "project-doidoi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:849773176716:web:b61e7fe2c36ca012d058a9",
+        "android_client_info": {
+          "package_name": "com.example.workerworkload"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdVQH5MK3xZv1B4BmmAOinSsTV_92PwJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
