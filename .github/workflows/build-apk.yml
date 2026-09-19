@@ -28,16 +28,10 @@ jobs:
       # 2. Cấu hình môi trường Java phục vụ dự án Java thuần
       # ============================================================
       - name: Setup JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-
-      # ============================================================
-      # 2b. Cài Android SDK (Đã nâng cấp lên v4 để SỬA HOÀN TOÀN lỗi 'tools')
-      # ============================================================
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
 
       # ============================================================
       # 3. Tự động định vị Root Project và Build APK bằng Gradle phù hợp
@@ -58,21 +52,16 @@ jobs:
             exit 1
           fi
           
-          # Loại bỏ ký tự './' ở đầu nếu có để làm sạch chuỗi đường dẫn
           TARGET_DIR=$(dirname "$SETTINGS_FILE" | sed 's|^\./||; s|^\.||')
           echo "➡️ Thư mục gốc dự án được xác định tại: $TARGET_DIR"
-          
-          # Lưu đường dẫn tương đối để truyền sang bước upload artifact
           echo "target_dir=$TARGET_DIR" >> $GITHUB_OUTPUT
           
           cd "$TARGET_DIR" || exit 1
           
+          # Tự động map ANDROID_HOME được cài sẵn trên môi trường ubuntu-latest của GitHub
           if [ -n "$ANDROID_HOME" ]; then
             echo "sdk.dir=$ANDROID_HOME" | sed 's/\\/\\\\/g' > local.properties
             echo "➡️ Đã ghi local.properties với ANDROID_HOME=$ANDROID_HOME"
-          elif [ -n "$ANDROID_SDK_ROOT" ]; then
-            echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-            echo "➡️ Đã ghi local.properties với ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
           fi
           
           echo "=====[ 2. KHỞI TẠO HOẶC CẤP QUYỀN GRADLE WRAPPER V8.4 ]====="
@@ -81,6 +70,8 @@ jobs:
             chmod +x ./gradlew
           else
             echo "-> Tự động tạo cấu hình Gradle Wrapper bản ổn định 8.4..."
+            # Cài đặt gradle tạm thời để sinh cấu trúc wrapper wrapper nếu thiếu
+            sudo apt-get update && sudo apt-get install -y gradle
             gradle wrapper --gradle-version 8.4
             chmod +x ./gradlew
           fi
@@ -95,7 +86,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jobfinder-debug-apk
-          # Sử dụng cấu trúc đường dẫn Linux chuẩn, loại bỏ khoảng trống thừa
-          path: ${{ github.workspace }}/${{ steps.build_step.outputs.target_dir }}/**/build/outputs/apk/debug/*.apk
+          path: ${{ github.workspace }}/**/build/outputs/apk/debug/*.apk
           retention-days: 7
           if-no-files-found: error
